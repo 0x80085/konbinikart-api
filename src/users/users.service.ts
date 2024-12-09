@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserDiscriminator } from './user.entity';
@@ -35,5 +39,37 @@ export class UsersService {
     });
 
     this.usersRepository.save(user);
+  }
+
+  /**
+   * Increment the resource use count for a specific user.
+   * @param userId The ID of the user whose count should be increased.
+   */
+  async increaseResourceUseCountFor(userId: string): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found.`);
+    }
+
+    user.resourceUseCount = (user.resourceUseCount || 0) + 1;
+
+    await this.usersRepository.save(user);
+  }
+
+  /**
+   * Reset the resource use count for a specific user.
+   * @param userId The ID of the user whose count should be reset.
+   */
+  async resetResourceUseCountFor(userId: string): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found.`);
+    }
+
+    user.resourceUseCount = 0;
+
+    await this.usersRepository.save(user);
   }
 }

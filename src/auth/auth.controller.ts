@@ -5,9 +5,10 @@ import { UserDiscriminator } from 'src/users/user.entity';
 
 export interface JwtPayload {
   username: string;
-  sub: number;
+  sub: string;
   isAdmin: boolean;
   discriminator: UserDiscriminator;
+  resourceUseCount: number;
 }
 
 export class AuthDto {

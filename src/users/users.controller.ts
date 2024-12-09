@@ -12,7 +12,7 @@ import { AdminOrStaffGuard } from 'src/auth/admin-or-staff.guard';
 
 export class User {
   @ApiProperty({ example: 1, description: 'The unique identifier of the user' })
-  id: number;
+  id: string;
 
   @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
   username: string;

@@ -9,7 +9,7 @@ export enum UserDiscriminator {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: string;
 
   @Column({ unique: true })
   username: string;
@@ -22,4 +22,7 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column()
+  resourceUseCount: number;
 }

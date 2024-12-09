@@ -31,6 +31,7 @@ export class AuthService {
       sub: user.id,
       discriminator: user.discriminator as UserDiscriminator,
       isAdmin: user.isAdmin,
+      resourceUseCount: user.resourceUseCount,
     };
     return {
       access_token: this.jwtService.sign(payload),
