@@ -36,6 +36,7 @@ export class UsersService {
       password,
       discriminator: UserDiscriminator.Staff, // todo
       isAdmin: isAdmin,
+      resourceUseCount: 0,
     });
 
     this.usersRepository.save(user);

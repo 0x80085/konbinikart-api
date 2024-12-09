@@ -2,6 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { ConfigService } from '@nestjs/config';
 
+export interface GroceryItem {
+  id: string;
+  emoji: string;
+  nameEnglish: string;
+  nameKatakana: string;
+  nameHiragana: string;
+  nameRomaji: string;
+}
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
@@ -90,6 +99,65 @@ export class AiService {
       if (response.status === 200) {
         this.logger.log('ChatGPT API response received successfully');
         return response.data.choices[0].message.content; // Adjust based on API's actual response
+      }
+
+      this.logger.warn(`ChatGPT API responded with status: ${response.status}`);
+      throw new Error(`ChatGPT API returned status: ${response.status}`);
+    } catch (error) {
+      this.logger.error(`Error calling ChatGPT API: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async generateChatGptResponseWithFunctionCall(
+    prompt: string,
+  ): Promise<GroceryItem[]> {
+    try {
+      this.logger.log(
+        `Sending request to ChatGPT API with prompt: "${prompt}"`,
+      );
+
+      const functions = [
+        {
+          name: 'generateGroceryItems',
+          description: 'Generate a list of grocery items in JSON format.',
+          parameters: {
+            type: 'object',
+            properties: {
+              count: { type: 'integer' }, // The number of items to generate
+            },
+            required: ['count'], // Ensure `count` is passed
+          },
+        },
+      ];
+
+      const response = await this.chatGptInstance.post(
+        '',
+        {
+          model: 'gpt-4', // Ensure you're using GPT-4 with function calling support
+          messages: [{ role: 'user', content: prompt }],
+          functions: functions, // Here, we specify the functions that GPT can invoke
+          function_call: 'auto', // Allow GPT to choose when to invoke the function
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.chatGptApiKey}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (response.status === 200) {
+        this.logger.log('ChatGPT API response received successfully');
+
+        // Parse the response, which should contain the function_call arguments
+        const functionResponse =
+          response.data.choices[0].message.function_call.arguments;
+
+        // Ensure the response is a valid array of GroceryItem objects
+        const groceryItems: GroceryItem[] = JSON.parse(functionResponse);
+
+        return groceryItems;
       }
 
       this.logger.warn(`ChatGPT API responded with status: ${response.status}`);

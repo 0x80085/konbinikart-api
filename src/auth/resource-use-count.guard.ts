@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
-import { JwtPayload } from '../auth.controller';
+import { JwtPayload } from './auth.controller';
 import { UserDiscriminator } from 'src/users/user.entity';
 
 @Injectable()
