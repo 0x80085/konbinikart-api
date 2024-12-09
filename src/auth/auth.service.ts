@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './auth.controller';
+import { UserDiscriminator } from 'src/users/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -18,12 +19,19 @@ export class AuthService {
       const { password, ...result } = user;
       return result;
     }
-    return null;
+    throw new InternalServerErrorException('Something went wrong');
   }
 
-  async login(user: any) {
-    await this.validateUser(user.username, user.password);
-    const payload: JwtPayload = { username: user.username, sub: user.userId };
+  async login(_user: { username: string; password: string }) {
+    await this.validateUser(_user.username, _user.password);
+    const user = await this.usersService.findOne(_user.username);
+
+    const payload: JwtPayload = {
+      username: user.username,
+      sub: user.id,
+      discriminator: user.discriminator as UserDiscriminator,
+      isAdmin: user.isAdmin,
+    };
     return {
       access_token: this.jwtService.sign(payload),
     };

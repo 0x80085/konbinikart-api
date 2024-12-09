@@ -1,10 +1,13 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBody, ApiProperty, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { UserDiscriminator } from 'src/users/user.entity';
 
 export interface JwtPayload {
   username: string;
   sub: number;
+  isAdmin: boolean;
+  discriminator: UserDiscriminator;
 }
 
 export class AuthDto {

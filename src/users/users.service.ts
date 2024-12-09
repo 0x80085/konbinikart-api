@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { User, UserDiscriminator } from './user.entity';
 
 @Injectable()
 export class UsersService {
@@ -13,10 +13,26 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { username } });
   }
 
+  async all(): Promise<User[] | undefined> {
+    return this.usersRepository.find();
+  }
+
   async create(username: string, password: string): Promise<any> {
-    const user = this.usersRepository.create();
-    user.password = password;
-    user.username = username;
+    const exists = await this.usersRepository.exists({ where: { username } });
+    if (exists) {
+      throw new ConflictException('Username taken');
+    }
+    const count = await this.usersRepository.count();
+    let isAdmin = false;
+    if (count === 0) {
+      isAdmin = true;
+    }
+    const user = this.usersRepository.create({
+      username,
+      password,
+      discriminator: UserDiscriminator.Staff, // todo
+      isAdmin: isAdmin,
+    });
 
     this.usersRepository.save(user);
   }
