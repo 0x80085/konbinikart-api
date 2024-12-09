@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
@@ -11,6 +12,8 @@ import { UserDiscriminator } from 'src/users/user.entity';
 
 @Injectable()
 export class ResourceUseCountGuard implements CanActivate {
+  private readonly logger = new Logger(ResourceUseCountGuard.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
@@ -44,6 +47,10 @@ export class ResourceUseCountGuard implements CanActivate {
     if (isStaffOrAdmin) {
       return true;
     }
+
+    this.logger.log(
+      `resourceUseCount: ${user.resourceUseCount} / ${resourceLimit} for ${user.username}`,
+    );
 
     if (userRecord.resourceUseCount >= resourceLimit) {
       throw new ForbiddenException('Resource usage limit exceeded.');
