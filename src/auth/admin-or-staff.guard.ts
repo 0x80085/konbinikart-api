@@ -24,8 +24,6 @@ export class AdminOrStaffGuard implements CanActivate {
       return true;
     }
 
-    throw new UnauthorizedException(
-      'Access denied: Admin or Staff role required.',
-    );
+    throw new UnauthorizedException('Access denied');
   }
 }
