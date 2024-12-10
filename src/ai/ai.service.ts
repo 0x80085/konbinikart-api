@@ -60,14 +60,17 @@ export class AiService {
    */
   async generateOllamaResponse(
     prompt: string,
-    model: string = 'default',
+    model: string = 'phi',
   ): Promise<string> {
     try {
-      this.logger.log(`Sending request to Ollama API with prompt: "${prompt}"`);
-      const response = await this.ollamaInstance.post('/generate', {
+      const command = {
         model,
-        prompt,
-      });
+        prompt: prompt,
+        stream: false,
+      };
+
+      this.logger.log(`Sending request to Ollama API with prompt: "${prompt}"`);
+      const response = await this.ollamaInstance.post('/generate', command);
 
       if (response.status === 200) {
         this.logger.log('Ollama API response received successfully');

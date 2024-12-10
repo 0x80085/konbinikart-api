@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { JwtPayload } from './auth.controller';
 import { UserDiscriminator } from 'src/users/user.entity';
+import { ThrottlerException } from '@nestjs/throttler';
 
 @Injectable()
 export class ResourceUseCountGuard implements CanActivate {
@@ -53,7 +54,7 @@ export class ResourceUseCountGuard implements CanActivate {
     );
 
     if (userRecord.resourceUseCount >= resourceLimit) {
-      throw new ForbiddenException('Resource usage limit exceeded.');
+      throw new ThrottlerException('Resource usage limit exceeded.');
     }
 
     return true;
