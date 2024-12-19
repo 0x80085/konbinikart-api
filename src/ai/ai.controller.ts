@@ -24,7 +24,7 @@ export class AiController {
 
   @ApiBearerAuth()
   @ApiBody({ type: PromptDto }) // Request body schema
-  @ApiResponse({ status: 200, description: 'Response from ai', type: String })
+  @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('gpt/prompt')
@@ -38,12 +38,22 @@ export class AiController {
 
   @ApiBearerAuth()
   @ApiBody({ type: PromptDto }) // Request body schema
-  @ApiResponse({ status: 200, description: 'Response from ai', type: String })
+  @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('ollama/prompt')
   async ollama(@Body() { prompt }: PromptDto) {
     return this.aiService.generateOllamaResponse(prompt);
+  }
+
+  @ApiBearerAuth()
+  @ApiBody({ type: PromptDto }) // Request body schema
+  @ApiResponse({ status: 200, description: 'Response from AI', type: String })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  // @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
+  @Post('huggingface/translate')
+  async huggingfaceTranslate(@Body() { prompt }: PromptDto) {
+    return this.aiService.translateWithHuggingface(prompt);
   }
 
   private async increaseResourceUseCount(req: any) {

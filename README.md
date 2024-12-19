@@ -97,3 +97,15 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Notes 
+
+### Models checked
+
+| Model Name                          | ✅ / ❌          |
+|-------------------------------------|-------------------|
+| **Mitsua/elan-mt-bt-en-ja**         | ✅               |
+| **google/gemma-2-2b**               | ❌               |
+| **google/gemma-2-2b-jpn-it**        | ❌               |
+| **Helsinki-NLP/opus-mt-en-jap**     | ❌               |
+| **facebook/mbart-large-50-many-to-many-mmt**     | ❔               |

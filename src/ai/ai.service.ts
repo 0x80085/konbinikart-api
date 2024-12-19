@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios, { AxiosInstance } from 'axios';
 import { ConfigService } from '@nestjs/config';
+import axios, { AxiosInstance } from 'axios';
+import { HfInference, TranslationOutput } from '@huggingface/inference';
 
 export interface GroceryItem {
   id: string;
@@ -14,27 +15,46 @@ export interface GroceryItem {
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
+
   private readonly ollamaInstance: AxiosInstance;
-  private readonly chatGptInstance: AxiosInstance;
   private readonly ollamaApiUrl: string;
+
+  private readonly chatGptInstance: AxiosInstance;
   private readonly chatGptApiUrl: string;
   private readonly chatGptApiKey: string;
 
+  private readonly huggingfaceModel: string;
+  private readonly huggingfaceInference: HfInference;
+
   constructor(private readonly configService: ConfigService) {
+    // Ollama
     this.ollamaApiUrl = this.configService.get<string>(
       'OLLAMA_API_URL',
       'https://api.ollama.ai',
     );
+
+    // OpenAI
     this.chatGptApiUrl = this.configService.get<string>(
       'CHATGPT_API_URL',
       'https://api.openai.com/v1/chat/completions',
     );
     this.chatGptApiKey = this.configService.get<string>('CHATGPT_API_KEY');
-
     if (!this.chatGptApiKey) {
       this.logger.error('CHATGPT_API_KEY is missing in environment variables.');
       throw new Error('CHATGPT_API_KEY not set');
     }
+
+    // Huggingface
+    this.huggingfaceModel = this.configService.get<string>(
+      'HUGGINGFACE_MODEL',
+      'EleutherAI/gpt-neo-2.7B',
+    );
+    const huggingFaceApiKey = this.configService.get<string>(
+      'HUGGINGFACE_API_KEY',
+      '',
+    );
+
+    this.huggingfaceInference = new HfInference(huggingFaceApiKey);
 
     // Axios instance for Ollama
     this.ollamaInstance = axios.create({
@@ -52,6 +72,31 @@ export class AiService {
         Authorization: `Bearer ${this.chatGptApiKey}`,
       },
     });
+  }
+
+  /**
+   * Translate text using huggingface model.
+   * @param text The text to translate.
+   */
+  async translateWithHuggingface(text: string): Promise<string> {
+    try {
+      this.logger.log(
+        `Translating text with [${this.huggingfaceModel}]: "${text}"`,
+      );
+
+      const result = await this.huggingfaceInference.translation({
+        model: this.huggingfaceModel,
+        inputs: text,
+      });
+      return this.extractTranslation(result);
+    } catch (error) {
+      console.log(error);
+
+      this.logger.error(
+        `Error during translation with [${this.huggingfaceModel}]: ${error.message}`,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -94,6 +139,7 @@ export class AiService {
       this.logger.log(
         `Sending request to ChatGPT API with prompt: "${prompt}"`,
       );
+
       const response = await this.chatGptInstance.post('', {
         model: 'gpt-3.5-turbo', // Default model, adjust as needed
         messages: [{ role: 'user', content: prompt }],
@@ -105,69 +151,29 @@ export class AiService {
       }
 
       this.logger.warn(`ChatGPT API responded with status: ${response.status}`);
+      this.logger.warn(`ChatGPT API responded with status: ${response.data}`);
       throw new Error(`ChatGPT API returned status: ${response.status}`);
     } catch (error) {
       this.logger.error(`Error calling ChatGPT API: ${error.message}`);
+      console.log(error);
+
       throw error;
     }
   }
 
-  async generateChatGptResponseWithFunctionCall(
-    prompt: string,
-  ): Promise<GroceryItem[]> {
-    try {
-      this.logger.log(
-        `Sending request to ChatGPT API with prompt: "${prompt}"`,
-      );
+  /**
+   * Extract the translated text from the response.
+   * Handles both single and array cases.
+   */
+  private extractTranslation(result: TranslationOutput): string {
+    console.log(result);
 
-      const functions = [
-        {
-          name: 'generateGroceryItems',
-          description: 'Generate a list of grocery items in JSON format.',
-          parameters: {
-            type: 'object',
-            properties: {
-              count: { type: 'integer' }, // The number of items to generate
-            },
-            required: ['count'], // Ensure `count` is passed
-          },
-        },
-      ];
-
-      const response = await this.chatGptInstance.post(
-        '',
-        {
-          model: 'gpt-4', // Ensure you're using GPT-4 with function calling support
-          messages: [{ role: 'user', content: prompt }],
-          functions: functions, // Here, we specify the functions that GPT can invoke
-          function_call: 'auto', // Allow GPT to choose when to invoke the function
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.chatGptApiKey}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      if (response.status === 200) {
-        this.logger.log('ChatGPT API response received successfully');
-
-        // Parse the response, which should contain the function_call arguments
-        const functionResponse =
-          response.data.choices[0].message.function_call.arguments;
-
-        // Ensure the response is a valid array of GroceryItem objects
-        const groceryItems: GroceryItem[] = JSON.parse(functionResponse);
-
-        return groceryItems;
-      }
-
-      this.logger.warn(`ChatGPT API responded with status: ${response.status}`);
-      throw new Error(`ChatGPT API returned status: ${response.status}`);
-    } catch (error) {
-      this.logger.error(`Error calling ChatGPT API: ${error.message}`);
-      throw error;
+    if (Array.isArray(result)) {
+      // If the result is an array, return the translation_text from the first object
+      return result[0]?.translation_text || 'Translation failed';
     }
+
+    // If the result is a single object, return its translation_text
+    return result.translation_text || 'Translation failed';
   }
 }
