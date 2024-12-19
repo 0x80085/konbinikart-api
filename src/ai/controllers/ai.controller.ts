@@ -5,10 +5,14 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AiService } from './ai.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResourceUseCountGuard } from 'src/auth/resource-use-count.guard';
 import { UsersService } from 'src/users/users.service';
+import { AiService, GroceryItem } from '../services/ai.service';
+import {
+  AiTranslationCommand,
+  AiTranslationHandler,
+} from '../handlers/ai-translation-handler';
 
 export class PromptDto {
   @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
@@ -52,8 +56,13 @@ export class AiController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   // @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('huggingface/translate')
-  async huggingfaceTranslate(@Body() { prompt }: PromptDto) {
-    return this.aiService.translateWithHuggingface(prompt);
+  async huggingfaceTranslate(
+    @Body() { prompt }: PromptDto,
+  ): Promise<GroceryItem> {
+    const handler = new AiTranslationHandler(this.aiService);
+    const response = handler.execute(new AiTranslationCommand(prompt));
+
+    return response;
   }
 
   private async increaseResourceUseCount(req: any) {

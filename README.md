@@ -105,7 +105,17 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 | Model Name                          | ✅ / ❌          |
 |-------------------------------------|-------------------|
 | **Mitsua/elan-mt-bt-en-ja**         | ✅               |
-| **google/gemma-2-2b**               | ❌               |
-| **google/gemma-2-2b-jpn-it**        | ❌               |
+| **facebook/mbart-large-50-many-to-many-mmt**     | 🥴               |
+| **facebook/nllb-200-distilled-600M**     | ❌               |
+| **megagonlabs/t5-base-japanese-web**               | ❌               |
 | **Helsinki-NLP/opus-mt-en-jap**     | ❌               |
-| **facebook/mbart-large-50-many-to-many-mmt**     | ❔               |
+| **sonoisa/t5-base-japanese**     | ❌               |
+| **sonoisa/t5-base-japanese-v1.1**     | ❌               |
+| **alirezamsh/small100**     | ❌               |
+| **Unbabel/XCOMET-XXL**     | ❌               |
+| **google/gemma-2-2b-jpn-it**        | ❌               |
+| **google/gemma-2-2b**               | ❌               |
+| **google/madlad400-X**     | ❌               |
+| **google/byt5-small**     | ❌               |
+| **google/mt5-base**     | ❌               |
+| **google-t5/t5-base** bc no JP     | ❌               |

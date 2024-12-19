@@ -88,12 +88,42 @@ export class AiService {
         model: this.huggingfaceModel,
         inputs: text,
       });
+
       return this.extractTranslation(result);
     } catch (error) {
       console.log(error);
 
       this.logger.error(
         `Error during translation with [${this.huggingfaceModel}]: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Translate text using huggingface model.
+   * @param text The text to translate.
+   */
+  async translateWithHuggingfaceByModel(
+    text: string,
+    modelName: string,
+  ): Promise<string> {
+    try {
+      this.logger.log(`Translating text with [${modelName}]: "${text}"`);
+
+      const result = await this.huggingfaceInference.textGeneration({
+        model: modelName,
+        inputs: text,
+      });
+
+      // return this.extractTranslation(result);
+      // return result as string;
+      return result.generated_text as string;
+    } catch (error) {
+      console.log(error);
+
+      this.logger.error(
+        `Error during translation with [${modelName}]: ${error.message}`,
       );
       throw error;
     }
