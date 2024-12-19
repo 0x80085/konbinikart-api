@@ -13,6 +13,7 @@ import {
   AiTranslationCommand,
   AiTranslationHandler,
 } from '../handlers/ai-translation-handler';
+import { ConfigService } from '@nestjs/config';
 
 export class PromptDto {
   @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
@@ -22,6 +23,7 @@ export class PromptDto {
 @Controller('ai')
 export class AiController {
   constructor(
+    private configService: ConfigService,
     private aiService: AiService,
     private usersService: UsersService,
   ) {}
@@ -59,7 +61,10 @@ export class AiController {
   async huggingfaceTranslate(
     @Body() { prompt }: PromptDto,
   ): Promise<GroceryItem> {
-    const handler = new AiTranslationHandler(this.aiService);
+    const handler = new AiTranslationHandler(
+      this.aiService,
+      this.configService,
+    );
     const response = handler.execute(new AiTranslationCommand(prompt));
 
     return response;

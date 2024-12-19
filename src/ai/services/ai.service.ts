@@ -1,7 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HfInference } from '@huggingface/inference';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
-import { HfInference, TranslationOutput } from '@huggingface/inference';
 
 export interface GroceryItem {
   id: string;
@@ -46,7 +50,7 @@ export class AiService {
 
     // Huggingface
     this.huggingfaceModel = this.configService.get<string>(
-      'HUGGINGFACE_MODEL',
+      'HUGGINGFACE_TRANSLATION_MODEL',
       'EleutherAI/gpt-neo-2.7B',
     );
     const huggingFaceApiKey = this.configService.get<string>(
@@ -80,7 +84,7 @@ export class AiService {
    */
   async translateWithHuggingface(text: string): Promise<string> {
     try {
-      this.logger.log(
+      this.logger.debug(
         `Translating text with [${this.huggingfaceModel}]: "${text}"`,
       );
 
@@ -89,7 +93,7 @@ export class AiService {
         inputs: text,
       });
 
-      return this.extractTranslation(result);
+      return this.extractTranslation(result as any);
     } catch (error) {
       console.log(error);
 
@@ -104,26 +108,24 @@ export class AiService {
    * Translate text using huggingface model.
    * @param text The text to translate.
    */
-  async translateWithHuggingfaceByModel(
+  async generateTextWithWithHuggingface(
     text: string,
     modelName: string,
   ): Promise<string> {
     try {
-      this.logger.log(`Translating text with [${modelName}]: "${text}"`);
+      this.logger.log(`Generating text with [${modelName}]"`);
 
       const result = await this.huggingfaceInference.textGeneration({
         model: modelName,
         inputs: text,
       });
 
-      // return this.extractTranslation(result);
-      // return result as string;
-      return result.generated_text as string;
+      return result.generated_text;
     } catch (error) {
       console.log(error);
 
       this.logger.error(
-        `Error during translation with [${modelName}]: ${error.message}`,
+        `Error during text gen with [${modelName}]: ${error.message}`,
       );
       throw error;
     }
@@ -195,15 +197,24 @@ export class AiService {
    * Extract the translated text from the response.
    * Handles both single and array cases.
    */
-  private extractTranslation(result: TranslationOutput): string {
-    console.log(result);
+  private extractTranslation(result: { translation_text: string }): string {
+    this.logger.debug(result);
+
+    let answer = null;
 
     if (Array.isArray(result)) {
       // If the result is an array, return the translation_text from the first object
-      return result[0]?.translation_text || 'Translation failed';
+      answer = result[0]?.translation_text;
+    }
+    if (result.translation_text) {
+      answer = result.translation_text;
     }
 
-    // If the result is a single object, return its translation_text
-    return result.translation_text || 'Translation failed';
+    if (answer === null) {
+      this.logger.error('could not extract from ', result);
+      throw new InternalServerErrorException('Could not extract translation');
+    }
+
+    return answer;
   }
 }
