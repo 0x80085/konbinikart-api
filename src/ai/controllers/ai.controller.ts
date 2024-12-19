@@ -56,7 +56,7 @@ export class AiController {
   @ApiBody({ type: PromptDto }) // Request body schema
   @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  // @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
+  @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('huggingface/translate')
   async huggingfaceTranslate(
     @Body() { prompt }: PromptDto,

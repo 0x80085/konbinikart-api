@@ -21,6 +21,15 @@ export class ResourceUseCountGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (
+      this.configService.get<string>('IS_PRODUCTION').toLowerCase() !== 'true'
+    ) {
+      this.logger.debug(
+        'Skipping JWT validation because it is not production.',
+      );
+      return true; // Skip authentication if not production
+    }
+
     const request = context.switchToHttp().getRequest();
     const user: JwtPayload = request.user; // Assuming the JwtAuthGuard adds the user to the request object.
 
