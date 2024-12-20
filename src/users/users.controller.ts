@@ -28,7 +28,7 @@ export class User {
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @ApiBearerAuth() // Indicates that this endpoint requires a JWT token
+  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'User profile retrieved successfully',
@@ -51,7 +51,7 @@ export class UsersController {
     return res;
   }
 
-  @ApiBearerAuth() // Indicates that this endpoint requires a JWT token
+  @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'User profile retrieved successfully',

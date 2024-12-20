@@ -1,17 +1,25 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
+  Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { UserDiscriminator } from 'src/users/user.entity';
 
 @Injectable()
 export class AdminOrStaffGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  private readonly logger = new Logger(AdminOrStaffGuard.name);
+  constructor(private configService: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
+    if (this.configService.get<string>('IS_PRODUCTION') !== 'true') {
+      this.logger.debug(
+        'Skipping JWT validation because it is not production.',
+      );
+      return true; // Skip authentication if not production
+    }
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 

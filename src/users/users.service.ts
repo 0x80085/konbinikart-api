@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,12 +7,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserDiscriminator } from './user.entity';
+import { InviteCodeService } from './invite-code.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private readonly inviteCodeService: InviteCodeService,
   ) {}
   async findOne(username: string): Promise<User | undefined> {
     return this.usersRepository.findOne({ where: { username } });
@@ -21,7 +24,17 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  async create(username: string, password: string): Promise<any> {
+  async create(
+    username: string,
+    password: string,
+    inviteCode: string,
+  ): Promise<any> {
+    const invite = await this.inviteCodeService.validateInviteCode(inviteCode);
+
+    if (!invite) {
+      throw new BadRequestException('Invalid or inactive invite code');
+    }
+
     const exists = await this.usersRepository.exists({ where: { username } });
     if (exists) {
       throw new ConflictException('Username taken');
@@ -31,6 +44,8 @@ export class UsersService {
     if (count === 0) {
       isAdmin = true;
     }
+
+    // todo register which invitecode was used
     const user = this.usersRepository.create({
       username,
       password,
@@ -39,7 +54,9 @@ export class UsersService {
       resourceUseCount: 0,
     });
 
-    this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+
+    await this.inviteCodeService.markAsUsed(savedUser, invite);
   }
 
   /**
@@ -72,5 +89,26 @@ export class UsersService {
     user.resourceUseCount = 0;
 
     await this.usersRepository.save(user);
+  }
+
+  async checkResourceLimit(userId: string): Promise<boolean> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+    if (!user.lastResourceUse || user.lastResourceUse < oneHourAgo) {
+      user.resourceUseCount = 0; // Reset count if last usage was more than an hour ago
+    }
+
+    if (user.resourceUseCount >= 10) {
+      return false; // Limit reached
+    }
+
+    user.resourceUseCount++;
+    user.lastResourceUse = now;
+    await this.usersRepository.save(user);
+
+    return true;
   }
 }

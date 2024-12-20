@@ -38,13 +38,9 @@ export class AuthService {
     };
   }
 
-  async register(username: string, password: string) {
-    // do checks
-    // hash pw
-    // make 1st user admin
-
+  async register(username: string, password: string, inviteCode: string) {
     const pw = await bcrypt.hash(password, 10);
 
-    await this.usersService.create(username, pw);
+    await this.usersService.create(username, pw, inviteCode);
   }
 }

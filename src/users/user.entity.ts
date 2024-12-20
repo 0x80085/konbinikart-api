@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 export enum UserDiscriminator {
   Staff = 'Staff',
@@ -8,7 +8,7 @@ export enum UserDiscriminator {
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ unique: true })
@@ -17,12 +17,15 @@ export class User {
   @Column()
   discriminator: string;
 
-  @Column()
+  @Column({ default: false })
   isAdmin: boolean;
 
   @Column()
   password: string;
 
-  @Column()
+  @Column({ default: 0 })
   resourceUseCount: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastResourceUse: Date;
 }

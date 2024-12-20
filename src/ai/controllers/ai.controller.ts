@@ -29,7 +29,7 @@ export class AiController {
   ) {}
 
   @ApiBearerAuth()
-  @ApiBody({ type: PromptDto }) // Request body schema
+  @ApiBody({ type: PromptDto })
   @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
@@ -43,7 +43,7 @@ export class AiController {
   }
 
   @ApiBearerAuth()
-  @ApiBody({ type: PromptDto }) // Request body schema
+  @ApiBody({ type: PromptDto })
   @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
@@ -53,7 +53,7 @@ export class AiController {
   }
 
   @ApiBearerAuth()
-  @ApiBody({ type: PromptDto }) // Request body schema
+  @ApiBody({ type: PromptDto })
   @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
