@@ -198,6 +198,7 @@ export class AiService {
    * Handles both single and array cases.
    */
   private extractTranslation(result: { translation_text: string }): string {
+    this.logger.debug('Extraction target text :');
     this.logger.debug(result);
 
     let answer = null;
@@ -211,9 +212,10 @@ export class AiService {
     }
 
     if (answer === null) {
-      this.logger.error('could not extract from ', result);
+      this.logger.error('Could not extract from ', result);
       throw new InternalServerErrorException('Could not extract translation');
     }
+    this.logger.debug('Extracted text: ' + answer);
 
     return answer;
   }
