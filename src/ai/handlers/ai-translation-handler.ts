@@ -89,8 +89,40 @@ export class AiTranslationHandler {
     }
   }
 
-      throw new InternalServerErrorException('Could not translate');
-    }
+  private async tryValidateAnswer(answer: string, input: string) {
+    // const makesSense = await this.tryValidateAnswer(hiragana, inputText);
+
+    // this.logger.debug(makesSense);
+
+    // if (makesSense === false) {
+    //   throw new InternalServerErrorException("AI hiragana failed to make sense of it.");
+    // }
+    const prompt = `You are an AI that takes English text as input and provides a translated Japanese output.
+    You should validate the translation for accuracy and grammatical correctness in Japanese.
+    You should also perform a basic sense-check to ensure the translation makes semantic sense based on the English input. 
+    Your only possible output is TRUE or FALSE. Nothing else.
+    Finally, the AI's response should be formatted in the following manner:
+
+    ##start response## 
+    [TRUE OR FALSE]
+    ##end response##
+
+    Here are the texts:
+    EN:
+    ${input}
+    
+    JP: 
+    "${answer}"
+ `;
+    const aiValidatioResponse =
+      await this.aiService.generateTextWithWithHuggingface(
+        prompt,
+        this.huggingfaceTextGenModel,
+      );
+
+    const extractedText = extractTextResponse(aiValidatioResponse, this.logger);
+
+    return extractedText.toLowerCase().includes('true');
   }
 
   private async getExplanation(inputText: string) {

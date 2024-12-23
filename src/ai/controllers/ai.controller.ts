@@ -5,9 +5,9 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { ResourceUseCountGuard } from 'src/auth/resource-use-count.guard';
-import { UsersService } from 'src/users/users.service';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { ResourceUseCountGuard } from '../../auth/resource-use-count.guard';
+import { UsersService } from '../../users/users.service';
 import { AiService, GroceryItem } from '../services/ai.service';
 import {
   AiTranslationCommand,

@@ -6,9 +6,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { JwtPayload } from './auth.controller';
-import { UserDiscriminator } from 'src/users/user.entity';
+import { UserDiscriminator } from '../users/user.entity';
 import { ThrottlerException } from '@nestjs/throttler';
 
 @Injectable()

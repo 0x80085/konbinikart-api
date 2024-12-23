@@ -13,8 +13,8 @@ import {
   ApiProperty,
   ApiResponse,
 } from '@nestjs/swagger';
-import { InviteCodeService } from 'src/users/invite-code.service';
-import { UserDiscriminator } from 'src/users/user.entity';
+import { InviteCodeService } from '../users/invite-code.service';
+import { UserDiscriminator } from '../users/user.entity';
 import { AdminOrStaffGuard } from './admin-or-staff.guard';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
