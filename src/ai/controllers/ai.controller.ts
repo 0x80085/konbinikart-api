@@ -72,8 +72,13 @@ export class AiController {
   }
 
   private async increaseResourceUseCount(req: any) {
-    const userId = req.user.id;
-    const user = await this.usersService.findOne(userId);
-    await this.usersService.increaseResourceUseCountFor(user.id);
+    if (
+      this.configService.get<string>('IS_PRODUCTION').toLocaleLowerCase() ===
+      'true'
+    ) {
+      const userId = req.user.id;
+      const user = await this.usersService.findOne(userId);
+      await this.usersService.increaseResourceUseCountFor(user.id);
+    }
   }
 }

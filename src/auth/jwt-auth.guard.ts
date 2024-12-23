@@ -18,7 +18,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
     // Add your custom authentication logic here
     // for example, call super.logIn(request) to establish a session.
-    if (this.configService.get<string>('IS_PRODUCTION') !== 'true') {
+    if (
+      this.configService.get<string>('IS_PRODUCTION').toLocaleLowerCase() !==
+      'true'
+    ) {
       this.logger.debug(
         'Skipping JWT validation because it is not production.',
       );
