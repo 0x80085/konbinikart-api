@@ -36,9 +36,7 @@ export class AiController {
   @Post('gpt/prompt')
   async gpt(@Body() { prompt }: PromptDto, @Request() req) {
     const response = await this.aiService.generateChatGptResponse(prompt);
-
     await this.increaseResourceUseCount(req);
-
     return response;
   }
 
@@ -48,8 +46,10 @@ export class AiController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('ollama/prompt')
-  async ollama(@Body() { prompt }: PromptDto) {
-    return this.aiService.generateOllamaResponse(prompt);
+  async ollama(@Body() { prompt }: PromptDto, @Request() req) {
+    const response = this.aiService.generateOllamaResponse(prompt);
+    await this.increaseResourceUseCount(req);
+    return response;
   }
 
   @ApiBearerAuth()
@@ -60,13 +60,14 @@ export class AiController {
   @Post('huggingface/translate')
   async huggingfaceTranslate(
     @Body() { prompt }: PromptDto,
+    @Request() req,
   ): Promise<GroceryItem> {
     const handler = new AiTranslationHandler(
       this.aiService,
       this.configService,
     );
     const response = handler.execute(new AiTranslationCommand(prompt));
-
+    await this.increaseResourceUseCount(req);
     return response;
   }
 
