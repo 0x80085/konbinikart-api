@@ -84,7 +84,10 @@ export class AiTranslationHandler {
       };
     } catch (error) {
       console.log(error);
-      const errorBody = { ...response, error: 'Translation failed' };
+      const errorBody = {
+        ...response,
+        error: error?.message || 'Unknown error',
+      };
       throw new InternalServerErrorException(errorBody);
     }
   }
@@ -188,7 +191,9 @@ export class AiTranslationHandler {
       }
 
       if (attempts === maxAttempts) {
-        throw new InternalServerErrorException('Cannot translate');
+        throw new InternalServerErrorException(
+          'Max conversion attempts reached',
+        );
       }
       attempts++;
     }
