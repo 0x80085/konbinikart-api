@@ -8,7 +8,7 @@ import {
 } from 'wanakana';
 import { AiService, GroceryItem } from '../services/ai.service';
 import { ConfigService } from '@nestjs/config';
-import { extractTextResponse } from './utils';
+import { convertKanjiToHiragana, extractTextResponse } from './utils';
 
 export interface GroceryItemWithDetails extends GroceryItem {
   explanation: string;
@@ -57,31 +57,35 @@ export class AiTranslationHandler {
 
       response.originalAiTranslation = aiTranslation;
 
-      const hiragana = await this.getHiragana(aiTranslation);
-      response.nameHiragana = hiragana;
+      const converted = (await this.convertKanji(aiTranslation)) as string;
+      response.nameHiragana = toHiragana(converted);
 
-      const katakana = toKatakana(hiragana);
+      const katakana = toKatakana(converted);
       response.nameKatakana = katakana;
 
-      const romaji = toRomaji(hiragana);
+      const romaji = toRomaji(converted);
       response.nameRomaji = romaji;
 
       this.logger.debug('Generating explanation for ', aiTranslation);
 
       const explanation = await this.getExplanation(aiTranslation);
+      response.explanation = explanation;
+
+      if (
+        explanation.includes('[') ||
+        explanation.includes(']') ||
+        explanation.trim().length === 0
+      ) {
+        const errorBody = {
+          ...response,
+          error: 'Explanation generation failed',
+        };
+        throw new InternalServerErrorException(errorBody);
+      }
 
       this.logger.debug('Successfully translated!');
 
-      return {
-        emoji: null,
-        id: null,
-        nameEnglish: inputText,
-        nameHiragana: hiragana,
-        nameKatakana: katakana,
-        nameRomaji: romaji,
-        explanation,
-        originalAiTranslation: aiTranslation,
-      };
+      return response;
     } catch (error) {
       console.log(error);
       const errorBody = {
@@ -90,6 +94,10 @@ export class AiTranslationHandler {
       };
       throw new InternalServerErrorException(errorBody);
     }
+  }
+
+  private async convertKanji(reply: string) {
+    return await convertKanjiToHiragana(reply);
   }
 
   private async tryValidateAnswer(answer: string, input: string) {

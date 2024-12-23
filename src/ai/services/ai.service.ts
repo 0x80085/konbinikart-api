@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { generateRandomInvisibleString } from '../handlers/utils';
 
 export interface GroceryItem {
   id: string;
@@ -115,9 +116,11 @@ export class AiService {
     try {
       this.logger.log(`Generating text with [${modelName}]"`);
 
+      const llmCacheBustToken = generateRandomInvisibleString();
+
       const result = await this.huggingfaceInference.textGeneration({
         model: modelName,
-        inputs: text,
+        inputs: llmCacheBustToken + text,
       });
 
       return result.generated_text;
