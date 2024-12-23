@@ -71,16 +71,24 @@ export class AiTranslationHandler {
       const explanation = await this.getExplanation(aiTranslation);
       response.explanation = explanation;
 
-      if (
-        explanation.includes('[') ||
-        explanation.includes(']') ||
-        explanation.trim().length === 0
-      ) {
-        const errorBody = {
-          ...response,
-          error: 'Explanation generation failed',
-        };
-        throw new InternalServerErrorException(errorBody);
+      const isValidExplanation = function name(value: string) {
+        return (
+          !value.includes('[') &&
+          !value.includes(']') &&
+          value.trim().length != 0
+        );
+      };
+
+      if (!isValidExplanation(explanation)) {
+        response.explanation = await this.getExplanation(aiTranslation);
+
+        if (!isValidExplanation(response.explanation)) {
+          const errorBody = {
+            ...response,
+            error: 'Explanation generation failed',
+          };
+          throw new InternalServerErrorException(errorBody);
+        }
       }
 
       this.logger.debug('Successfully translated!');
