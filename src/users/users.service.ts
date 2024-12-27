@@ -8,14 +8,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserDiscriminator } from './user.entity';
 import { InviteCodeService } from './invite-code.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
+  resourceUseLimit: number;
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private readonly inviteCodeService: InviteCodeService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.resourceUseLimit = config.get<number>('RESOURCE_USE_LIMIT');
+  }
   async findOne(username: string): Promise<User | undefined> {
     return this.usersRepository.findOne({ where: { username } });
   }
@@ -69,8 +74,7 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found.`);
     }
-
-    user.resourceUseCount = (user.resourceUseCount || 0) + 1;
+    await this.updateResourceLimit(user);
 
     await this.usersRepository.save(user);
   }
@@ -91,9 +95,7 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
-  async checkResourceLimit(userId: string): Promise<boolean> {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
-
+  private async updateResourceLimit(user: User): Promise<boolean> {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
@@ -101,7 +103,7 @@ export class UsersService {
       user.resourceUseCount = 0; // Reset count if last usage was more than an hour ago
     }
 
-    if (user.resourceUseCount >= 10) {
+    if (user.resourceUseCount >= this.resourceUseLimit) {
       return false; // Limit reached
     }
 
