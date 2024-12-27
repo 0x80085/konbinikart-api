@@ -30,7 +30,7 @@ export class AiService {
   private readonly chatGptApiUrl: string;
   private readonly chatGptApiKey: string;
 
-  private readonly huggingfaceModel: string;
+  private readonly huggingfaceJapaneseModel: string;
   private readonly huggingfaceInference: HfInference;
 
   private readonly deepSeekInstance: AxiosInstance;
@@ -52,8 +52,8 @@ export class AiService {
     this.chatGptApiKey = this.configService.get<string>('CHATGPT_API_KEY');
 
     // Huggingface
-    this.huggingfaceModel = this.configService.get<string>(
-      'HUGGINGFACE_TRANSLATION_MODEL',
+    this.huggingfaceJapaneseModel = this.configService.get<string>(
+      'HUGGINGFACE_TRANSLATION_JP_MODEL',
       'EleutherAI/gpt-neo-2.7B',
     );
     const huggingFaceApiKey = this.configService.get<string>(
@@ -98,17 +98,17 @@ export class AiService {
   }
 
   /**
-   * Translate text using huggingface model.
+   * Translate text to JP using huggingface model.
    * @param text The text to translate.
    */
-  async translateWithHuggingface(text: string): Promise<string> {
+  async translateToJapaneseWithHuggingface(text: string): Promise<string> {
     try {
       this.logger.debug(
-        `Translating text with [${this.huggingfaceModel}]: "${text}"`,
+        `Translating text with [${this.huggingfaceJapaneseModel}]: "${text}"`,
       );
 
       const result = await this.huggingfaceInference.translation({
-        model: this.huggingfaceModel,
+        model: this.huggingfaceJapaneseModel,
         inputs: text,
       });
 
@@ -117,8 +117,34 @@ export class AiService {
       console.log(error);
 
       this.logger.error(
-        `Error during translation with [${this.huggingfaceModel}]: ${error.message}`,
+        `Error during translation with [${this.huggingfaceJapaneseModel}]: ${error.message}`,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * Translate text to JP using huggingface model.
+   * @param text The text to translate.
+   */
+  async translateToOtherWithHuggingfaceHelsinkiNLP(
+    text: string,
+    sourceLang: string,
+    targetLang: string,
+  ): Promise<string> {
+    try {
+      const model = `Helsinki-NLP/opus-mt-${sourceLang}-${targetLang}`;
+      this.logger.debug(`Translating text with [${model}]: "${text}"`);
+
+      const result = await this.huggingfaceInference.translation({
+        model: model,
+        inputs: text,
+      });
+
+      return this.extractTranslation(result as any);
+    } catch (error) {
+      console.log(error);
+      this.logger.error(`Error during translation: ${error.message}`);
       throw error;
     }
   }

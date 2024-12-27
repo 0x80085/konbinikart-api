@@ -1,39 +1,41 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { toHiragana, toKatakana, toRomaji } from 'wanakana';
-import { AiService, GroceryItem } from '../services/ai.service';
-import { convertKanjiToHiragana, extractTextResponse } from './utils';
+import { AiService } from '../services/ai.service';
+import { extractTextResponse } from './utils';
 import { ApiProperty } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
-export class GroceryItemWithDetails implements GroceryItem {
-  @ApiProperty({ example: '1', description: 'ID' })
-  id: string;
-  @ApiProperty({ example: '🤷‍♂️', description: 'emoji' })
+export class TranslatedItemWithDetails {
+  @ApiProperty({ example: '🤷‍♂️', description: 'A visual hint' })
   emoji: string;
-  @ApiProperty({ example: 'Name english' })
+
+  @ApiProperty({ example: 'Fish sauce', description: 'The prompt' })
   nameEnglish: string;
-  @ApiProperty({ example: 'Katakana' })
-  nameKatakana: string;
-  @ApiProperty({ example: 'Hiragana' })
-  nameHiragana: string;
-  @ApiProperty({ example: 'Romaji' })
-  nameRomaji: string;
-  @ApiProperty({ example: 'Fish sauce is made of fish' })
+
+  @ApiProperty({
+    example: 'Fish sauce is sauce made of fish things',
+    description: 'The explanation of the translation',
+  })
   explanation: string;
-  @ApiProperty({ example: '', description: 'translation from AI' })
+
+  @ApiProperty({
+    example: 'Sauce de poisson',
+    description: 'The translation for the prompt',
+  })
   originalAiTranslation: string;
 }
 
-export class AiTranslationCommand {
+export class AiOtherTranslationCommand {
   inputText: string;
+  targetLang: string;
 
-  constructor(input: string) {
+  constructor(input: string, targetLang: string) {
     this.inputText = input;
+    this.targetLang = targetLang;
   }
 }
 
-export class AiTranslationHandler {
-  private readonly logger = new Logger(AiTranslationHandler.name);
+export class AiOtherTranslationHandler {
+  private readonly logger = new Logger(AiOtherTranslationHandler.name);
 
   private huggingfaceTextGenModel: string;
 
@@ -46,33 +48,29 @@ export class AiTranslationHandler {
       'mistralai/Mistral-Nemo-Instruct-2407',
     );
   }
+
   async execute({
     inputText,
-  }: AiTranslationCommand): Promise<GroceryItemWithDetails> {
+    targetLang,
+  }: AiOtherTranslationCommand): Promise<TranslatedItemWithDetails> {
     this.logger.debug('Translation requested for: ' + inputText);
 
-    const response: GroceryItemWithDetails = {
+    const response: TranslatedItemWithDetails = {
       emoji: null,
-      id: null,
       nameEnglish: inputText,
-      nameHiragana: null,
-      nameKatakana: null,
-      nameRomaji: null,
       explanation: null,
       originalAiTranslation: null,
     };
 
     try {
       const aiTranslation =
-        await this.aiService.translateToJapaneseWithHuggingface(inputText);
+        await this.aiService.translateToOtherWithHuggingfaceHelsinkiNLP(
+          inputText,
+          'en',
+          targetLang,
+        );
 
       response.originalAiTranslation = aiTranslation;
-
-      const converted = (await convertKanjiToHiragana(aiTranslation)) as string;
-
-      response.nameHiragana = toHiragana(converted);
-      response.nameKatakana = toKatakana(converted);
-      response.nameRomaji = toRomaji(converted);
 
       const explanation = await this.getExplanation(aiTranslation);
       response.explanation = explanation;
@@ -132,13 +130,13 @@ export class AiTranslationHandler {
     this.logger.debug('Generating explanation for ', inputText);
     const explanationReponse =
       await this.aiService.generateTextWithWithHuggingface(
-        `you will receive a japanese text and must explain what the definition is.
-        You must reply in the english language.
+        `you will receive a text and must explain the definition of teh word.
+        You must reply in the English language.
         You must explain whether this is a traditional translation or more current. 
         You must explain whether the word is bastardized from other languages.
-        In case there are more popular japanese variants of the word, also mention them in japanese and preferably write them both in hiragana and romaji.
+        In case there are more popular variants of the word, also mention it.
         
-        format the response in the following way:
+        Format the response in the following way:
 
         ##start response## 
         [your explanation]
@@ -159,7 +157,7 @@ export class AiTranslationHandler {
 
     const explanationReponse =
       await this.aiService.generateTextWithWithHuggingface(
-        `You will receive a japanese text and must return exactly one correspoding meoji.
+        `You will receive a text and must return exactly one correspoding meoji.
         Format the response in the following way:
 
         ##start response## 

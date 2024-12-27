@@ -1,23 +1,40 @@
-import { Body, Controller, Post, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
-  ApiProperty,
-  ApiBody,
-  ApiResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiProperty,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { ResourceUseCountGuard } from '../../auth/resource-use-count.guard';
 import { UsersService } from '../../users/users.service';
-import { AiService, GroceryItem } from '../services/ai.service';
+import {
+  AiOtherTranslationCommand,
+  AiOtherTranslationHandler,
+  TranslatedItemWithDetails,
+} from '../handlers/ai-other-translation-handler';
 import {
   AiTranslationCommand,
   AiTranslationHandler,
+  GroceryItemWithDetails,
 } from '../handlers/ai-translation-handler';
-import { ConfigService } from '@nestjs/config';
+import { AiService } from '../services/ai.service';
 
 export class PromptDto {
-  @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
+  @ApiProperty({ example: 'Fish sauce', description: 'The prompt' })
   prompt: string;
+}
+
+export class HFPromptDto {
+  @ApiProperty({ example: 'Fish sauce', description: 'The prompt' })
+  prompt: string;
+
+  @ApiProperty({
+    example: 'fr',
+    description: 'The targeted language to translate to',
+  })
+  targetLang: string;
 }
 
 @Controller('ai')
@@ -66,19 +83,48 @@ export class AiController {
 
   @ApiBearerAuth()
   @ApiBody({ type: PromptDto })
-  @ApiResponse({ status: 200, description: 'Response from AI', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Response from AI',
+    type: GroceryItemWithDetails,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('huggingface/translate')
   async huggingfaceTranslate(
     @Body() { prompt }: PromptDto,
     @Request() req,
-  ): Promise<GroceryItem> {
+  ): Promise<GroceryItemWithDetails> {
     const handler = new AiTranslationHandler(
       this.aiService,
       this.configService,
     );
     const response = handler.execute(new AiTranslationCommand(prompt));
+    await this.increaseResourceUseCount(req);
+    return response;
+  }
+
+  @ApiBearerAuth()
+  @ApiBody({ type: HFPromptDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Response from AI',
+    type: TranslatedItemWithDetails,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
+  @Post('huggingface/translate/other')
+  async huggingfaceTextGen(
+    @Body() { prompt, targetLang }: HFPromptDto,
+    @Request() req,
+  ): Promise<TranslatedItemWithDetails> {
+    const handler = new AiOtherTranslationHandler(
+      this.aiService,
+      this.configService,
+    );
+    const response = handler.execute(
+      new AiOtherTranslationCommand(prompt, targetLang),
+    );
     await this.increaseResourceUseCount(req);
     return response;
   }
