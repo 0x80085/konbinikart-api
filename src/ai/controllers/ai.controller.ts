@@ -57,6 +57,18 @@ export class AiController {
   @ApiResponse({ status: 200, description: 'Response from AI', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
+  @Post('deepseek/prompt')
+  async deepseek(@Body() { prompt }: PromptDto, @Request() req) {
+    const response = this.aiService.generateTextWithDeepSeek(prompt);
+    await this.increaseResourceUseCount(req);
+    return response;
+  }
+
+  @ApiBearerAuth()
+  @ApiBody({ type: PromptDto })
+  @ApiResponse({ status: 200, description: 'Response from AI', type: String })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(JwtAuthGuard, ResourceUseCountGuard)
   @Post('huggingface/translate')
   async huggingfaceTranslate(
     @Body() { prompt }: PromptDto,
@@ -71,6 +83,12 @@ export class AiController {
     return response;
   }
 
+  /**
+   * Increases the user.resourceUseCount
+   *
+   * Assumes request as authed and req.user.id is defined.
+   * @param req NestJS Request obj to check which user it needs to update.
+   */
   private async increaseResourceUseCount(req: any) {
     if (
       this.configService.get<string>('IS_PRODUCTION').toLocaleLowerCase() ===

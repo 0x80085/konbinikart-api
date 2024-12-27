@@ -1,5 +1,7 @@
 import { HfInference } from '@huggingface/inference';
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -31,6 +33,10 @@ export class AiService {
   private readonly huggingfaceModel: string;
   private readonly huggingfaceInference: HfInference;
 
+  private readonly deepSeekInstance: AxiosInstance;
+  private readonly deepSeekApiUrl: string;
+  private readonly deepSeekApiKey: string;
+
   constructor(private readonly configService: ConfigService) {
     // Ollama
     this.ollamaApiUrl = this.configService.get<string>(
@@ -61,6 +67,19 @@ export class AiService {
 
     this.huggingfaceInference = new HfInference(huggingFaceApiKey);
 
+    // DeepSeek
+    this.deepSeekApiUrl = this.configService.get<string>(
+      'DEEPSEEK_API_URL',
+      'https://api.deepseek.com/v1/chat/completions', // Default DeepSeek API URL
+    );
+    this.deepSeekApiKey = this.configService.get<string>('DEEPSEEK_API_KEY');
+    if (!this.deepSeekApiKey) {
+      this.logger.error(
+        'DEEPSEEK_API_KEY is missing in environment variables.',
+      );
+      throw new Error('DEEPSEEK_API_KEY not set');
+    }
+
     // Axios instance for Ollama
     this.ollamaInstance = axios.create({
       baseURL: this.ollamaApiUrl,
@@ -75,6 +94,15 @@ export class AiService {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.chatGptApiKey}`,
+      },
+    });
+
+    // Axios instance for DeepSeek
+    this.deepSeekInstance = axios.create({
+      baseURL: this.deepSeekApiUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.deepSeekApiKey}`,
       },
     });
   }
@@ -130,6 +158,43 @@ export class AiService {
       this.logger.error(
         `Error during text gen with [${modelName}]: ${error.message}`,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * Generate text using DeepSeek API.
+   * @param prompt The input prompt for text generation.
+   */
+  async generateTextWithDeepSeek(prompt: string): Promise<string> {
+    this.logger.log(`Generating text with [DeepSeek-v3]"`);
+    try {
+      const response = await this.deepSeekInstance.post('', {
+        model: 'deepseek-chat', // Replace with the correct DeepSeek model name
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 150, // Adjust as needed
+        temperature: 0.7, // Adjust as needed
+      });
+
+      this.logger.log('OK Generated text with DeepSeek');
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      console.error(error);
+
+      this.logger.error(
+        `Error during text generation with DeepSeek: ${error.message}`,
+      );
+      if (`${error.status}` === '402') {
+        throw new HttpException(
+          'API requires payment',
+          HttpStatus.PAYMENT_REQUIRED,
+        );
+      }
       throw error;
     }
   }
