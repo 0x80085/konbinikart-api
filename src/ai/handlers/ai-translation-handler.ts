@@ -1,13 +1,7 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
-import {
-  isHiragana,
-  isKatakana,
-  toHiragana,
-  toKatakana,
-  toRomaji,
-} from 'wanakana';
-import { AiService, GroceryItem } from '../services/ai.service';
 import { ConfigService } from '@nestjs/config';
+import { toHiragana, toKatakana, toRomaji } from 'wanakana';
+import { AiService, GroceryItem } from '../services/ai.service';
 import { convertKanjiToHiragana, extractTextResponse } from './utils';
 
 export interface GroceryItemWithDetails extends GroceryItem {
@@ -108,42 +102,6 @@ export class AiTranslationHandler {
     return await convertKanjiToHiragana(reply);
   }
 
-  private async tryValidateAnswer(answer: string, input: string) {
-    // const makesSense = await this.tryValidateAnswer(hiragana, inputText);
-
-    // this.logger.debug(makesSense);
-
-    // if (makesSense === false) {
-    //   throw new InternalServerErrorException("AI hiragana failed to make sense of it.");
-    // }
-    const prompt = `You are an AI that takes English text as input and provides a translated Japanese output.
-    You should validate the translation for accuracy and grammatical correctness in Japanese.
-    You should also perform a basic sense-check to ensure the translation makes semantic sense based on the English input. 
-    Your only possible output is TRUE or FALSE. Nothing else.
-    Finally, the AI's response should be formatted in the following manner:
-
-    ##start response## 
-    [TRUE OR FALSE]
-    ##end response##
-
-    Here are the texts:
-    EN:
-    ${input}
-    
-    JP: 
-    "${answer}"
- `;
-    const aiValidatioResponse =
-      await this.aiService.generateTextWithWithHuggingface(
-        prompt,
-        this.huggingfaceTextGenModel,
-      );
-
-    const extractedText = extractTextResponse(aiValidatioResponse, this.logger);
-
-    return extractedText.toLowerCase().includes('true');
-  }
-
   private async getExplanation(inputText: string) {
     const explanationReponse =
       await this.aiService.generateTextWithWithHuggingface(
@@ -167,82 +125,5 @@ export class AiTranslationHandler {
 
     const explanation = extractTextResponse(explanationReponse, this.logger);
     return explanation;
-  }
-
-  private async getHiragana(inputText: string): Promise<string> {
-    let convertedTranslation =
-      await this.tryConvertToHiraganaUsingAi(inputText);
-
-    this.logger.debug('Found possible hiragana: ' + convertedTranslation);
-    this.logger.debug('Validating hiragana');
-
-    if (isKatakana(convertedTranslation)) {
-      this.logger.debug('Found katakana');
-      return toHiragana(convertedTranslation);
-    }
-    if (isHiragana(convertedTranslation)) {
-      this.logger.debug('Found hiragana');
-      return convertedTranslation;
-    }
-
-    this.logger.debug(
-      'Converted Translation has Kanji or is mixed syntax, will attempt hiragana conversion using AI',
-    );
-
-    const maxAttempts = 3;
-    let attempts = 0;
-    let answer = null;
-
-    while (attempts <= maxAttempts) {
-      this.logger.log(convertedTranslation);
-
-      if (isHiragana(convertedTranslation)) {
-        this.logger.log('Ok found hiragana run: ' + attempts);
-        answer = convertedTranslation;
-        break;
-      } else {
-        this.logger.warn('Hmm isnt hiragana, retrying.. run: ' + attempts);
-        convertedTranslation =
-          await this.tryConvertToHiraganaUsingAi(inputText);
-      }
-
-      if (attempts === maxAttempts) {
-        throw new InternalServerErrorException(
-          'Max conversion attempts reached',
-        );
-      }
-      attempts++;
-    }
-    return answer;
-  }
-
-  private async tryConvertToHiraganaUsingAi(inputText: string) {
-    const prompt = `you will receive a japanese text and must convert any katakana and kanji characters into hiragana.
-    The response must only consist of valid hiragana characters.
-    
-    format the response in the following way:
-
-    ##start response## 
-    [input converted to hiragana]
-    ##end response##
-    
-    New convert this text into hiragana-only characters:
-    "${inputText}"
-    `;
-
-    this.logger.debug(
-      'Trying to convert to hiragana using AI ' + this.huggingfaceTextGenModel,
-    );
-    const response = await this.aiService.generateTextWithWithHuggingface(
-      prompt,
-      this.huggingfaceTextGenModel,
-    );
-
-    const extractedReponse = extractTextResponse(response, this.logger);
-    this.logger.debug(
-      'Attempted to convert to hiragana using AI. Result: ',
-      extractedReponse,
-    );
-    return extractedReponse;
   }
 }
