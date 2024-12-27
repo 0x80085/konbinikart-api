@@ -25,9 +25,9 @@ export class ResourceUseCountGuard implements CanActivate {
       this.configService.get<string>('IS_PRODUCTION').toLowerCase() !== 'true'
     ) {
       this.logger.debug(
-        'Skipping JWT validation because it is not production.',
+        'Skipping ResourceUseCount validation because it is not production.',
       );
-      return true; // Skip authentication if not production
+      return true; // Skip if not production
     }
 
     const request = context.switchToHttp().getRequest();
@@ -63,6 +63,8 @@ export class ResourceUseCountGuard implements CanActivate {
     );
 
     if (userRecord.resourceUseCount >= resourceLimit) {
+      this.logger.debug('Limit resourceUseCount reached');
+
       throw new ThrottlerException('Resource usage limit exceeded.');
     }
 

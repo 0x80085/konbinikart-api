@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Logger,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ApiBearerAuth,
@@ -39,6 +46,7 @@ export class HFPromptDto {
 
 @Controller('ai')
 export class AiController {
+  private readonly logger = new Logger(AiController.name);
   constructor(
     private configService: ConfigService,
     private aiService: AiService,
@@ -142,7 +150,13 @@ export class AiController {
     ) {
       const userId = req.user.id;
       const user = await this.usersService.findOne(userId);
+      this.logger.debug(
+        'Updating count for ' + userId + ' Count=' + user.resourceUseCount,
+      );
       await this.usersService.increaseResourceUseCountFor(user.id);
+      this.logger.debug(
+        'Updated count for ' + userId + ' Count=' + user.resourceUseCount,
+      );
     }
   }
 }

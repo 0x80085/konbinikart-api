@@ -102,14 +102,14 @@ export class AiOtherTranslationHandler {
         }
       }
 
-      response.emoji = await this.getEmoji(aiTranslation);
+      response.emoji = await this.getEmoji(response.nameEnglish);
 
       if (!isValidAIReply(response.emoji)) {
         this.logger.warn(
           `Unacceptable output, retrying emoji gen: ${response.emoji} `,
         );
         // allow 2 tries
-        response.emoji = await this.getEmoji(aiTranslation);
+        response.emoji = await this.getEmoji(response.nameEnglish);
       }
       this.logger.warn(`Settling on emoji: ${response.emoji} `);
 
