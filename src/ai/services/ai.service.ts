@@ -268,7 +268,7 @@ export class AiService {
    * Handles both single and array cases.
    */
   private extractTranslation(result: { translation_text: string }): string {
-    this.logger.debug('Extraction target text :');
+    this.logger.debug('Extracting translation_text value from:');
     this.logger.debug(result);
 
     let answer = null;

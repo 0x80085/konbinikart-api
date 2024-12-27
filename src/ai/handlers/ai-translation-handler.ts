@@ -34,6 +34,8 @@ export class AiTranslationHandler {
   async execute({
     inputText,
   }: AiTranslationCommand): Promise<GroceryItemWithDetails> {
+    this.logger.debug('Translation requested for: ' + inputText);
+
     const response: GroceryItemWithDetails = {
       emoji: null,
       id: null,
@@ -51,21 +53,16 @@ export class AiTranslationHandler {
 
       response.originalAiTranslation = aiTranslation;
 
-      const converted = (await this.convertKanji(aiTranslation)) as string;
+      const converted = (await convertKanjiToHiragana(aiTranslation)) as string;
+
       response.nameHiragana = toHiragana(converted);
-
-      const katakana = toKatakana(converted);
-      response.nameKatakana = katakana;
-
-      const romaji = toRomaji(converted);
-      response.nameRomaji = romaji;
-
-      this.logger.debug('Generating explanation for ', aiTranslation);
+      response.nameKatakana = toKatakana(converted);
+      response.nameRomaji = toRomaji(converted);
 
       const explanation = await this.getExplanation(aiTranslation);
       response.explanation = explanation;
 
-      const isValidExplanation = function name(value: string) {
+      const isValidAIReply = function name(value: string) {
         return (
           !value.includes('[') &&
           !value.includes(']') &&
@@ -73,10 +70,17 @@ export class AiTranslationHandler {
         );
       };
 
-      if (!isValidExplanation(explanation)) {
+      if (!isValidAIReply(explanation)) {
+        this.logger.warn(
+          `Unacceptable output try 1, retrying explanation gen: ${explanation} `,
+        );
+
         response.explanation = await this.getExplanation(aiTranslation);
 
-        if (!isValidExplanation(response.explanation)) {
+        if (!isValidAIReply(response.explanation)) {
+          this.logger.error(
+            `Unacceptable output try 2 : ${response.explanation} `,
+          );
           const errorBody = {
             ...response,
             error: 'Explanation generation failed',
@@ -84,6 +88,17 @@ export class AiTranslationHandler {
           throw new InternalServerErrorException(errorBody);
         }
       }
+
+      response.emoji = await this.getEmoji(aiTranslation);
+
+      if (!isValidAIReply(response.emoji)) {
+        this.logger.warn(
+          `Unacceptable output, retrying emoji gen: ${response.emoji} `,
+        );
+        // allow 2 tries
+        response.emoji = await this.getEmoji(aiTranslation);
+      }
+      this.logger.warn(`Settling on emoji: ${response.emoji} `);
 
       this.logger.debug('Successfully translated!');
 
@@ -98,11 +113,8 @@ export class AiTranslationHandler {
     }
   }
 
-  private async convertKanji(reply: string) {
-    return await convertKanjiToHiragana(reply);
-  }
-
   private async getExplanation(inputText: string) {
+    this.logger.debug('Generating explanation for ', inputText);
     const explanationReponse =
       await this.aiService.generateTextWithWithHuggingface(
         `you will receive a japanese text and must explain what the definition is.
@@ -117,7 +129,29 @@ export class AiTranslationHandler {
         [your explanation]
         ##end response##
         
-        New explain this text in detail, give the definition of the word or words:
+        Now explain this text in detail, give the definition of the word or words:
+        "${inputText}"
+    `,
+        this.huggingfaceTextGenModel,
+      );
+
+    const explanation = extractTextResponse(explanationReponse, this.logger);
+    return explanation;
+  }
+
+  private async getEmoji(inputText: string) {
+    this.logger.debug('Generating emoji for ', inputText);
+
+    const explanationReponse =
+      await this.aiService.generateTextWithWithHuggingface(
+        `You will receive a japanese text and must return exactly one correspoding meoji.
+        Format the response in the following way:
+
+        ##start response## 
+        [your emoji]
+        ##end response##
+        
+        Now return the emoji relating to this text:
         "${inputText}"
     `,
         this.huggingfaceTextGenModel,
