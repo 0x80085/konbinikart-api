@@ -27,7 +27,7 @@ export interface JwtPayload {
   resourceUseCount: number;
 }
 
-export class AuthDto {
+export class SignUpDto {
   @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
   username: string;
 
@@ -41,6 +41,17 @@ export class AuthDto {
   inviteCode: string;
 }
 
+export class LoginDto {
+  @ApiProperty({ example: 'johndoe', description: 'The username of the user' })
+  username: string;
+
+  @ApiProperty({
+    example: 'securePassword123',
+    description: 'The password of the user',
+  })
+  password: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -48,15 +59,15 @@ export class AuthController {
     private readonly inviteCodeService: InviteCodeService,
   ) {}
 
-  @ApiBody({ type: AuthDto })
+  @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Successful login', type: String })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @Post('login')
-  async login(@Body() body: AuthDto) {
+  async login(@Body() body: SignUpDto) {
     return this.authService.login(body);
   }
 
-  @ApiBody({ type: AuthDto })
+  @ApiBody({ type: SignUpDto })
   @ApiResponse({
     status: 201,
     description: 'Successful registration',
@@ -64,7 +75,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @Post('register')
-  async register(@Body() body: AuthDto) {
+  async register(@Body() body: SignUpDto) {
     return this.authService.register(
       body.username,
       body.password,
