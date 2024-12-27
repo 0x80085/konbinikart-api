@@ -50,10 +50,6 @@ export class AiService {
       'https://api.openai.com/v1/chat/completions',
     );
     this.chatGptApiKey = this.configService.get<string>('CHATGPT_API_KEY');
-    if (!this.chatGptApiKey) {
-      this.logger.error('CHATGPT_API_KEY is missing in environment variables.');
-      throw new Error('CHATGPT_API_KEY not set');
-    }
 
     // Huggingface
     this.huggingfaceModel = this.configService.get<string>(
@@ -73,12 +69,6 @@ export class AiService {
       'https://api.deepseek.com/v1/chat/completions', // Default DeepSeek API URL
     );
     this.deepSeekApiKey = this.configService.get<string>('DEEPSEEK_API_KEY');
-    if (!this.deepSeekApiKey) {
-      this.logger.error(
-        'DEEPSEEK_API_KEY is missing in environment variables.',
-      );
-      throw new Error('DEEPSEEK_API_KEY not set');
-    }
 
     // Axios instance for Ollama
     this.ollamaInstance = axios.create({
@@ -167,6 +157,13 @@ export class AiService {
    * @param prompt The input prompt for text generation.
    */
   async generateTextWithDeepSeek(prompt: string): Promise<string> {
+    if (!this.deepSeekApiKey) {
+      this.logger.error(
+        'DEEPSEEK_API_KEY is missing in environment variables.',
+      );
+      throw new Error('DEEPSEEK_API_KEY not set');
+    }
+
     this.logger.log(`Generating text with [DeepSeek-v3]"`);
     try {
       const response = await this.deepSeekInstance.post('', {
@@ -177,8 +174,9 @@ export class AiService {
             content: prompt,
           },
         ],
-        max_tokens: 150, // Adjust as needed
-        temperature: 0.7, // Adjust as needed
+        max_tokens: 150,
+        temperature: 0.7,
+        stream: false,
       });
 
       this.logger.log('OK Generated text with DeepSeek');
@@ -235,6 +233,10 @@ export class AiService {
    * @param prompt The input prompt for ChatGPT.
    */
   async generateChatGptResponse(prompt: string): Promise<string> {
+    if (!this.chatGptApiKey) {
+      this.logger.error('CHATGPT_API_KEY is missing in environment variables.');
+      throw new Error('CHATGPT_API_KEY not set');
+    }
     try {
       this.logger.log(
         `Sending request to ChatGPT API with prompt: "${prompt}"`,
