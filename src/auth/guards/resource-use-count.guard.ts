@@ -6,10 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
-import { JwtPayload } from './auth.controller';
-import { UserDiscriminator } from '../users/user.entity';
+import { JwtPayload } from '../controllers/auth.controller';
+import { UserDiscriminator } from '../../users/entities/user.entity';
 import { ThrottlerException } from '@nestjs/throttler';
+import { UsersService } from '../../users/services/users.service';
 
 @Injectable()
 export class ResourceUseCountGuard implements CanActivate {

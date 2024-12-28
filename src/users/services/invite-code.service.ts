@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { InviteCode } from './invite-code.entity';
-import { User } from './user.entity';
+import { InviteCode } from '../entities/invite-code.entity';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class InviteCodeService {

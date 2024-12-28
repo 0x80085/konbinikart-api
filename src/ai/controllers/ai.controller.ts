@@ -13,9 +13,8 @@ import {
   ApiProperty,
   ApiResponse,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ResourceUseCountGuard } from '../../auth/resource-use-count.guard';
-import { UsersService } from '../../users/users.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { ResourceUseCountGuard } from '../../auth/guards/resource-use-count.guard';
 import {
   AiOtherTranslationCommand,
   AiOtherTranslationHandler,
@@ -27,6 +26,7 @@ import {
   GroceryItemWithDetails,
 } from '../handlers/ai-translation-handler';
 import { AiService } from '../services/ai.service';
+import { UsersService } from '../../users/services/users.service';
 
 export class PromptDto {
   @ApiProperty({ example: 'Fish sauce', description: 'The prompt' })

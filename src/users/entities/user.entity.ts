@@ -4,6 +4,7 @@ export enum UserDiscriminator {
   Staff = 'Staff',
   FreeUser = 'FreeUser',
   PremiumUser = 'PremiumUser',
+  AlphaTesterInviteCode = 'AlphaTesterInviteCode',
 }
 
 @Entity()

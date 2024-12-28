@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UserDiscriminator } from '../users/user.entity';
+import { UserDiscriminator } from '../../users/entities/user.entity';
 
 @Injectable()
 export class AdminOrStaffGuard implements CanActivate {

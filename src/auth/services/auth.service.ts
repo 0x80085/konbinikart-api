@@ -1,9 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '../../users/services/users.service';
 import * as bcrypt from 'bcrypt';
-import { JwtPayload } from './auth.controller';
-import { UserDiscriminator } from '../users/user.entity';
+import { JwtPayload } from '../controllers/auth.controller';
+import { UserDiscriminator } from '../../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {

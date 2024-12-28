@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './user.entity';
-import { InviteCodeService } from './invite-code.service';
-import { InviteCode } from './invite-code.entity';
+import { User } from './entities/user.entity';
+import { InviteCode } from './entities/invite-code.entity';
+import { UsersController } from './controllers/users.controller';
+import { InviteCodeService } from './services/invite-code.service';
+import { UsersService } from './services/users.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, InviteCode])],

@@ -13,11 +13,11 @@ import {
   ApiProperty,
   ApiResponse,
 } from '@nestjs/swagger';
-import { InviteCodeService } from '../users/invite-code.service';
-import { UserDiscriminator } from '../users/user.entity';
-import { AdminOrStaffGuard } from './admin-or-staff.guard';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { UserDiscriminator } from '../../users/entities/user.entity';
+import { AdminOrStaffGuard } from '../guards/admin-or-staff.guard';
+import { AuthService } from '../services/auth.service';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { InviteCodeService } from '../../users/services/invite-code.service';
 
 export interface JwtPayload {
   username: string;

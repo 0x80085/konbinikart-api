@@ -4,11 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserDiscriminator } from './user.entity';
 import { InviteCodeService } from './invite-code.service';
-import { ConfigService } from '@nestjs/config';
+import { User, UserDiscriminator } from '../entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -50,11 +50,10 @@ export class UsersService {
       isAdmin = true;
     }
 
-    // todo register which invitecode was used
     const user = this.usersRepository.create({
       username,
       password,
-      discriminator: UserDiscriminator.Staff, // todo
+      discriminator: UserDiscriminator.AlphaTesterInviteCode,
       isAdmin: isAdmin,
       resourceUseCount: 0,
     });

@@ -5,10 +5,10 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UsersService } from './users.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UsersService } from '../services/users.service';
 import { ApiBearerAuth, ApiProperty, ApiResponse } from '@nestjs/swagger';
-import { AdminOrStaffGuard } from '../auth/admin-or-staff.guard';
+import { AdminOrStaffGuard } from '../../auth/guards/admin-or-staff.guard';
 
 export class User {
   @ApiProperty({ example: 1, description: 'The unique identifier of the user' })
